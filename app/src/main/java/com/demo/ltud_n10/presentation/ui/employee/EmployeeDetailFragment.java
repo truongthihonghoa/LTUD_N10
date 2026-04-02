@@ -54,8 +54,9 @@ public class EmployeeDetailFragment extends Fragment {
     }
 
     private void setupUI() {
-        binding.tvTitle.setText(title);
-        binding.btnBack.setOnClickListener(v -> handleBackAction());
+        if (title != null) {
+            binding.tvTitle.setText(title);
+        }
 
         // Setup Gender Spinner
         String[] genders = {"Nam", "Nữ"};
@@ -77,6 +78,14 @@ public class EmployeeDetailFragment extends Fragment {
         if (currentEmployee != null) {
             binding.btnSave.setText("Chỉnh sửa");
         }
+
+        // Hide errors by default
+        binding.tvNameError.setVisibility(View.GONE);
+        binding.tvDobError.setVisibility(View.GONE);
+        binding.tvCccdError.setVisibility(View.GONE);
+        binding.tvPhoneError.setVisibility(View.GONE);
+        binding.tvAddressError.setVisibility(View.GONE);
+        binding.tvPositionError.setVisibility(View.GONE);
     }
 
     private void populateData() {
@@ -105,13 +114,21 @@ public class EmployeeDetailFragment extends Fragment {
 
         DatePickerDialog datePickerDialog = new DatePickerDialog(requireContext(),
                 (view, year1, monthOfYear, dayOfMonth) -> {
-                    String date = dayOfMonth + "/" + (monthOfYear + 1) + "/" + year1;
+                    String date = String.format("%02d/%02d/%04d", dayOfMonth, monthOfYear + 1, year1);
                     binding.tvDob.setText(date);
                 }, year, month, day);
         datePickerDialog.show();
     }
 
     private void saveEmployee() {
+        // Reset errors
+        binding.tvNameError.setVisibility(View.GONE);
+        binding.tvDobError.setVisibility(View.GONE);
+        binding.tvCccdError.setVisibility(View.GONE);
+        binding.tvPhoneError.setVisibility(View.GONE);
+        binding.tvAddressError.setVisibility(View.GONE);
+        binding.tvPositionError.setVisibility(View.GONE);
+
         String name = binding.etName.getText().toString();
         String cccd = binding.etCccd.getText().toString();
         String phone = binding.etPhone.getText().toString();
@@ -120,10 +137,30 @@ public class EmployeeDetailFragment extends Fragment {
         String gender = binding.spinnerGender.getSelectedItem().toString();
         String position = binding.spinnerPosition.getSelectedItem().toString();
 
-        if (name.isEmpty() || cccd.isEmpty() || phone.isEmpty()) {
-            Toast.makeText(requireContext(), "Vui lòng nhập đầy đủ thông tin", Toast.LENGTH_SHORT).show();
-            return;
+        boolean hasError = false;
+
+        if (name.isEmpty()) {
+            binding.tvNameError.setVisibility(View.VISIBLE);
+            hasError = true;
         }
+        if (dob.isEmpty() || dob.equals("06/02/2026")) {
+            binding.tvDobError.setVisibility(View.VISIBLE);
+            hasError = true;
+        }
+        if (cccd.isEmpty() || cccd.length() != 12) {
+            binding.tvCccdError.setVisibility(View.VISIBLE);
+            hasError = true;
+        }
+        if (phone.isEmpty() || phone.length() != 10) {
+            binding.tvPhoneError.setVisibility(View.VISIBLE);
+            hasError = true;
+        }
+        if (address.isEmpty()) {
+            binding.tvAddressError.setVisibility(View.VISIBLE);
+            hasError = true;
+        }
+
+        if (hasError) return;
 
         Employee employee = (currentEmployee != null) ? currentEmployee : new Employee();
         employee.setName(name);
@@ -152,7 +189,6 @@ public class EmployeeDetailFragment extends Fragment {
     }
 
     private void showSuccessDialog(String msg) {
-        // Simple Toast for now, can be replaced with custom dialog if needed
         Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show();
         Navigation.findNavController(requireView()).popBackStack();
     }
